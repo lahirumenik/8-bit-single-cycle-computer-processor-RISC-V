@@ -14,12 +14,16 @@ module cache (
     output  mem_read,mem_write;
 
 );
-logic [31:0] cache_array [7:0];  
+
+// cache(.clock(), .address(), .cpu_writeData(), .write(write), .read(read), .cpu_readData(), .busywait(), .mem_readData(), .mem_busywait(),
+// .mem_writeData(), .mem_address(), .mem_read(), .mem_write())
+
+logic [31:0] cacheblock_array [7:0];  
 logic dirty_array [7:0];             
 logic  valid_array [7:0];             
 logic [2:0] tag_array [7:0]; 
 
-logic [2:0] tag, index, logic tagmatch;
+logic [2:0] tag, index, tagmatch;
 logic dirty, valid;
 logic [1:0] offset;
 
@@ -53,11 +57,41 @@ always @(*) begin
 
 end
 
+ always @(*) begin
+        if(hit) begin
+            if(read && (!write)) begin
+                busywait = 0 ;  
+                tagmatch = 0 ;  
+            end
+            else if (write && (!read)) begin
+                busywait = 0;       
+                cache_write = 1;     
+                
+            end
+        end
+       
+    end
+    
+
+    always @(posedge clock) begin
+       if(cache_write==1) begin
+           #1
+            case (offset)
+                0: cacheblock_array[index][7:0] = cpu_writeData;
+                1: cacheblock_array[index][15:8] = cpu_writeData;
+                2: cacheblock_array[index][23:16] = cpu_writeData;
+                3: cacheblock_array[index][31:24] = cpu_writeData;
+            endcase
+           dirty_array[index] = 1;
+       end 
+    end
 
 
 
 
-parameter IDLE = 3'b000, MEM_READ = 3'b001;
+
+
+parameter IDLE = 3'b000, MEM_READ = 3'b001, MEM_WRITE = 3'b010;
     reg [2:0] state, next_state;
 
     // combinational next state logic
@@ -67,16 +101,22 @@ parameter IDLE = 3'b000, MEM_READ = 3'b001;
             IDLE:
                 if ((read || write) && !dirty && !hit)  
                     next_state = MEM_READ;
-                else if (...)
-                    next_state = ...;
+                else if ((read || write) && dirty && !hit)
+                    next_state = MEM_WRITE;
                 else
                     next_state = IDLE;
             
             MEM_READ:
                 if (!mem_busywait)
-                    next_state = ...;
+                    next_state = IDLE;
                 else    
                     next_state = MEM_READ;
+
+             MEM_WRITE:
+                if (!mem_busywait)
+                    next_state = MEM_READ;
+                else    
+                    next_state = MEM_WRITE;
             
         endcase
     end
@@ -101,16 +141,43 @@ parameter IDLE = 3'b000, MEM_READ = 3'b001;
                 mem_address = {tag, index};
                 mem_writedata = 32'dx;
                 busywait = 1;
+
+
+                #1 if(mem_busywait==0) begin
+                    cacheblock_array[index]  = mem_readdata ;
+                    valid_array[index] = 1 ;
+                    tag_array[index] = tag ;
+                end
+            end
+
+            MEM_WRITE:
+            begin
+                mem_read = 0;
+                mem_write = 1;
+            
+                mem_address = {tag_array[index], index};
+                mem_writedata = cacheblock_array[index];
+                busywait = 1;
+
+                if(mem_busywait==0) begin
+                    dirty_array[index] = 0;
+                end
+
             end
             
         endcase
     end
 
+    integer i;
     // sequential logic for state transitioning 
     always @(posedge clock, reset)
     begin
         if(reset)
             state = IDLE;
+            for(i = 0 ; i<7 ;i = i+1) begin
+                dirty_array[i] = 0 ;
+                valid_array[i] = 0 ;
+            end
         else
             state = next_state;
     end
