@@ -33,49 +33,10 @@ logic [O-1:0] OPCODE;
 //bne = 000 = 0000_1101
 //lwd = 0000_1110
 //swd = 0000_1111
+//lwi = 0001_0000
+//swi = 0001_0001
 
-/*always @(*) begin
-    OPCODE = INSTRUCTION[I-1:I-O];
-
-    case(OPCODE)
-    `LOADI,
-    `MOV,
-    `ADD,
-    `SUB,
-    `OR,
-    `AND : WRITE = 1;
-
-    `MOV,
-    `ADD,
-    `SUB,
-    `OR,
-    `AND : MUX2 = 1;
-
-    `LOADI,
-    `MOV,
-    `ADD,
-    `OR,
-    `AND : MUX1 = 0;
-
-    `SUB: MUX1 = 1;
-    `LOADI: MUX2 = 0;
-
-    `LOADI,
-    `MOV: ALUOP = 3'b000;
-
-    `ADD,
-    `SUB: ALUOP =  3'b001;
-
-    `AND: ALUOP= 3'b010;
-
-    `OR: ALUOP = 3'b011;
-
-
-
-
-    endcase
-
-end*/
+x
 
 always @(*) begin
     OPCODE = INSTRUCTION[I-1:I-O];

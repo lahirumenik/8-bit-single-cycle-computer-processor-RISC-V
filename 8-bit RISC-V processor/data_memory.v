@@ -1,11 +1,12 @@
 module data_memory #(
     //parameterized
-    parameter N=8, W = 256
+    parameter N=32, W = 256
     //N = width of address and data
     //W = memory size
     
 )(
-    input logic [N-1:0] writedata, address,
+    input logic [N-1:0] writedata, 
+    input logic [5:0] address,
     output logic [N-1:0] readdata,
     input logic write, read,
     input  clk, reset,
@@ -32,20 +33,26 @@ always @(posedge clk) begin
             data_memory_array[i] = 0;
         
         busywait = '0;
+        readaccess = '0;
+        writeaccess = '0;
 		
     end
 
     else if (readaccess) begin
-        readdata = #40 data_memory_array[address];
-        busywait = '0;
-        readaccess = 0;
-        writeaccess = 0;
+        readdata[7:0]   = #40 memory_array[{address,2'b00}];
+		readdata[15:8]  = #40 memory_array[{address,2'b01}];
+		readdata[23:16] = #40 memory_array[{address,2'b10}];
+		readdata[31:24] = #40 memory_array[{address,2'b11}];
+		busywait = 0;
+		readaccess = 0;
     end
     else if (writeaccess) begin
-        data_memory_array[address] = #40 writedata;
-        busywait = '0;
-        readaccess = 0;
-        writeaccess = 0;        
+        memory_array[{address,2'b00}] = #40 writedata[7:0];
+		memory_array[{address,2'b01}] = #40 writedata[15:8];
+		memory_array[{address,2'b10}] = #40 writedata[23:16];
+		memory_array[{address,2'b11}] = #40 writedata[31:24];
+		busywait = 0;
+		writeaccess = 0;     
     end
 
 end
