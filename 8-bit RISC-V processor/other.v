@@ -41,7 +41,7 @@ module decode #(
     assign  SOURCE1 = INSTRUCTION[15:8]; //10:8]
     assign  SOURCE2 = INSTRUCTION[2:0]; 
     assign  IMMEDIATE = INSTRUCTION[7:0]; 
-    assign offset_addddress = INSTRUCTION[23:16];
+    assign  offset_addddress = INSTRUCTION[23:16];
 
 
 endmodule

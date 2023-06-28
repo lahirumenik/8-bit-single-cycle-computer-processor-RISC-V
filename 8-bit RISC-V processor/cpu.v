@@ -4,13 +4,15 @@
 //`include "controlUnit.v"
 `include "control.v"
 `include "data_memory.v"
-
+`include "cache.v"
+`timescale 1ns/100ps
 module cpu #(
     parameter W = 32
 )(
     input [W-1:0] INSTRUCTION,
     input CLK, RESET,
-    output logic signed [W-1:0] PC
+    output logic signed [W-1:0] PC,
+    input logic inst_mem_busy
 );
 logic [7:0] IMMEDIATE;
 logic [2:0] DESTINATION, SOURCE1, SOURCE2;
@@ -33,8 +35,21 @@ ControlUnit #(.I(32), .O(8), .Ao(3)) my_control_unit (.INSTRUCTION(INSTRUCTION),
 //#(.I(32), .O(8), .Ao(3))
 
 logic [7:0] readdata;
-data_memory #(.N(8), .W(256)) my_data_memory (.write(write_mem), .read(read_mem), .clk(CLK), .reset(RESET), .address(RESULT),
- .writedata(OUT1), .readdata(readdata), .busywait(busywait));
+// data_memory #(.N(8), .W(256)) my_data_memory (.write(write_mem), .read(read_mem), .clk(CLK), .reset(RESET), .address(RESULT),
+//  .writedata(OUT1), .readdata(readdata), .busywait(busywait));
+
+logic [31:0] mem_readdata;
+logic [31:0] mem_writedata;
+logic [5:0] mem_address;
+logic mem_busywait, mem_read, mem_write;
+
+cache data_cache (.clock(CLK), .reset(RESET),  .address(RESULT), .cpu_writeData(OUT1), .write(write_mem), 
+.read(read_mem), .cpu_readData(readdata), .busywait(busywait), .mem_readdata(mem_readdata), .mem_busywait(mem_busywait),
+ .mem_writedata(mem_writedata), .mem_address(mem_address), .mem_read(mem_read), .mem_write(mem_write));
+
+data_memory #(.N(32), .W(256)) my_data_memory (.write(mem_write), .read(mem_read), .clk(CLK), .reset(RESET), .address(mem_address),
+ .writedata(mem_writedata), .readdata(mem_readdata), .busywait(mem_busywait));
+
 
 logic [7:0]  OUT1, OUT2, out;
 
@@ -74,7 +89,7 @@ always @(posedge CLK) begin
         #1 
         PC <= 0;
     end
-    else if (!busywait) begin
+    else if (!busywait && !inst_mem_busy) begin
         
         case (pc_case)
 

@@ -1,5 +1,6 @@
 `include "shift_mux.v"
 `include "adder.v"
+`timescale 1ns/100ps
 
 module ALU #(
     parameter N =8, S=3 //N == input/output bits  & S == select code bits

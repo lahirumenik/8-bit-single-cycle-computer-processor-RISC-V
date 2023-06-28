@@ -4,6 +4,7 @@
 `define SUB 8'b0000_0011
 `define OR 8'b0000_0101
 `define AND 8'b0000_0100
+`timescale 1ns/100ps
 
 module ControlUnit #(
     parameter I = 32, O = 8, Ao= 3
@@ -36,7 +37,7 @@ logic [O-1:0] OPCODE;
 //lwi = 0001_0000
 //swi = 0001_0001
 
-x
+
 
 always @(*) begin
     OPCODE = INSTRUCTION[I-1:I-O];
